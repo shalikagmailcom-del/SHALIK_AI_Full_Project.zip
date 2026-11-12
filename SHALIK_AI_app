@@ -1,0 +1,44 @@
+
+name: Build SHALIK AI APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'SHALIK_AI_Full_Project.zip'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project
+        run: unzip -q SHALIK_AI_Full_Project.zip -d source
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install packages
+        working-directory: source/flutter_app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: source/flutter_app
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          URL="${BACKEND_URL:-https://YOUR-BACKEND-DOMAIN.example.com}"
+          flutter build apk --release --dart-define=BACKEND_URL="$URL"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHALIK-AI-APK
+          path: source/flutter_app/build/app/outputs/flutter-apk/app-release.apk
